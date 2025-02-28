@@ -192,7 +192,7 @@ app.post("/test-convert", async (req, res) => {
       const convertedStatus = "Qualification"; // Or a valid status in your org
 
       const convertLeadResponse = await axios.post(
-          "http://localhost:5000/convert-lead", // Assuming your server runs on port 5000
+          "https://react-project-theta-sandy-50.vercel.app/convert-lead", // Assuming your server runs on port 5000
           {
               leadId,
               accessToken,
@@ -214,5 +214,5 @@ app.post("/test-convert", async (req, res) => {
 
 // Start the server
 app.listen(5000, () => {
-  console.log("🚀 Backend running on http://localhost:5000");
+  console.log("🚀 Backend running on https://react-project-theta-sandy-50.vercel.app");
 });
