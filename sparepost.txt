@@ -1,0 +1,132 @@
+// Endpoint to convert Lead to Opportunity
+// app.post("/convert-lead", async (req, res) => {
+//   const {
+//     leadId,
+//     accessToken,
+//     instanceUrl,
+//     StageName,
+//     opportunityName,
+//     doNotCreateOpportunity,
+//     accountId,
+//     // contactId,
+//   } = req.body;
+
+//   try {
+//     // Log the payload for debugging
+//     console.log("Payload received for Lead conversion:", {
+//       leadId,
+//       accessToken,
+//       instanceUrl,
+//       StageName	,
+//       opportunityName,
+//       doNotCreateOpportunity,
+//       accountId,
+//       // contactId,
+//     });
+
+//     // Log the access token and instance URL
+//     console.log("Access Token:", accessToken);
+//     console.log("Instance URL:", instanceUrl);
+
+//     const response = await axios.post(
+//       `${instanceUrl}/services/data/v59.0/sobjects/Lead/${leadId}/convert`,
+//       {
+//         StageName, // Required
+//         opportunityName, // Optional
+//         doNotCreateOpportunity, // Optional
+//         accountId, // Optional
+//         // contactId, // Optional
+//       },
+//       {
+//         headers: {
+//           Authorization: `Bearer ${accessToken}`,
+//           "Content-Type": "application/json",
+//         },
+//       }
+//     );
+
+//     res.json(response.data);
+//   } catch (error) {
+//     console.error("Error converting Lead:", error.response ? error.response.data : error.message);
+//     res.status(400).json({ error: error.response ? error.response.data : error.message });
+//   }
+// });
+app.post("/convert-lead", async (req, res) => {
+  const { leadId, accessToken, instanceUrl, StageName, opportunityName, doNotCreateOpportunity, accountId, contactId } = req.body;
+console.log(accessToken)
+  try {
+      // Change the lead status to a convertible status
+      const patchUrl = `${instanceUrl}/services/data/v63.0/sobjects/Lead/${leadId}`;
+      console.log("Instance URL (patch):", patchUrl);
+
+
+      await axios.patch(
+        patchUrl,
+
+          {
+              Status: "Working - Contacted", // or another valid convertible status
+          },
+          {
+              headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  "Content-Type": "application/json",
+              },
+          }
+      );
+
+      // Now, convert the lead
+      const postUrl = `${instanceUrl}/services/data/v63.0/sobjects/Lead/${leadId}/convert`;
+      console.log("Instance URL (post):", postUrl);
+
+      const response = await axios.post(
+        postUrl,       {
+              convertedStatus: StageName, //Use the stagename as the converted status.
+              opportunityName,
+              doNotCreateOpportunity,
+              accountId,
+              contactId,
+          },
+          {
+              headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  "Content-Type": "application/json",
+              },
+          }
+      );
+
+      res.json(response.data);
+  } catch (error) {
+      
+    console.error("Error converting Lead:", error.response ? error.response.data : error.message);
+      res.status(400).json({ error: error.response ? error.response.data : error.message });
+  }
+});
+app.post("/test-convert", async (req, res) => {
+  try {
+      // Replace with your actual values
+   
+      const leadId = "00QAu00000OcdnJMAR";
+      const accessToken = "00DAu0000034x1N!AQEAQMKz3obN.Fb2bCavtqwTVx_gPPB6dWJ1aoGHxEzq.vsjvZjh6eMvLT3ELYpeV0sCzGvyZWLAOWNEUdUHScOmKReh_BpS";
+      const instanceUrl = "https://erptechnicals--fulrdpbx.sandbox.my.salesforce.com";
+      const convertedStatus = "Qualification"; // Or a valid status in your org
+
+      const convertLeadResponse = await axios.post(
+          "http://localhost:5000/convert-lead", // Assuming your server runs on port 5000
+          {
+              leadId,
+              accessToken,
+              instanceUrl,
+              convertedStatus,
+              opportunityName: "Test Opportunity", // Optional
+              doNotCreateOpportunity: false, // Optional
+              accountId: null, // Optional
+              contactId: null, // Optional
+          }
+      );
+
+      res.json(convertLeadResponse.data);
+  } catch (error) {
+      console.error("Error calling convert-lead endpoint:", error.response ? error.response.data : error.message);
+      res.status(500).json({ error: error.response ? error.response.data : error.message });
+  }
+});
