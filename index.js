@@ -8,7 +8,7 @@ const fs = require("fs");
 const app = express();
 app.use(express.json());
 // app.use(cors());
-app.use(cors({ origin: 'https://localhost:3003' }));
+app.use(cors({ origin: ['https://localhost:3003', 'https://react-project-theta-sandy-50.vercel.app'] }));
 
 // Endpoint to get Salesforce access token
 app.post("/auth/salesforce", async (req, res) => {
