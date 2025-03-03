@@ -2,18 +2,13 @@ require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
-const admin = require("firebase-admin");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 
 const app = express();
 
-const serviceAccount = require("./serviceAccountKey.json");
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
-
-const db = admin.firestore();
-
+// Middleware
 app.use(express.json());
 app.use(cors({
   origin: [
@@ -23,6 +18,7 @@ app.use(cors({
   ],
 }));
 
+// Salesforce Authentication Endpoint
 app.post("/auth/salesforce", async (req, res) => {
   try {
     const params = new URLSearchParams({
@@ -45,39 +41,58 @@ app.post("/auth/salesforce", async (req, res) => {
   }
 });
 
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    // Create the 'uploads' directory if it doesn't exist
+    if (!fs.existsSync("uploads")) {
+      fs.mkdirSync("uploads");
+    }
+    cb(null, "uploads/"); // Save files in the 'uploads' directory
+  },
+  filename: function (req, file, cb) {
+    // Append a timestamp to the filename to make it unique
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage: storage });
+
+// Middleware to parse JSON and URL-encoded bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.post("/api/upload", async (req, res) => {
+// Route to handle file uploads
+app.post("/api/upload", upload.any(), (req, res) => {
   try {
-    const leadId = req.body.lead_id; // Use lead_id from the body
+    console.log("Files uploaded:", req.files);
+
+    // Extract leadId from the request body
+    const leadId = req.body.leadId;
     console.log("Lead ID:", leadId);
 
-    const uploadData = {
-      leadId: leadId,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
-    };
-
-    await db.collection("upload").add(uploadData);
-
+    // Respond with success message, uploaded file details, and leadId
     res.status(200).json({
-      message: "Lead ID stored successfully",
+      message: "Files uploaded successfully",
+      files: req.files,
       leadId: leadId,
     });
   } catch (error) {
-    console.error("Error storing lead ID:", error);
+    console.error("Error handling file upload:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
+// Error handling middleware
 app.use((err, req, res, next) => {
   console.error("Error:", err);
   res.status(500).json({ error: "Something went wrong!" });
 });
 
+// Start the Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Backend running on port ${PORT}`);
 });
 
+// Export the app for Vercel
 module.exports = app;
