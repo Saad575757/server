@@ -5,8 +5,18 @@ const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const admin = require("firebase-admin");
 
 const app = express();
+
+// Initialize Firebase Admin SDK
+const serviceAccount = require("./serviceaccount.json"); // Replace with your service account key path
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
+const db = admin.firestore(); // Initialize Firestore
 
 // Middleware
 app.use(express.json());
@@ -57,27 +67,40 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// Middleware to parse JSON and URL-encoded bodies
+// Route to handle file uploads
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Route to handle file uploads
-app.post("/api/upload", upload.any(), (req, res) => {
+app.post("/api/upload", async (req, res) => { // Make async
   try {
-    console.log("Files uploaded:", req.files);
-
-    // Extract leadId from the request body
+    // console.log("Files uploaded:", req.files);
     const leadId = req.body.leadId;
     console.log("Lead ID:", leadId);
 
-    // Respond with success message, uploaded file details, and leadId
+    // Prepare data to be stored in Firestore
+    const uploadData = {
+      leadId: leadId,
+      // files: req.files.map(file => ({ //commented out file section
+      //   filename: file.filename,
+      //   originalname: file.originalname,
+      //   path: file.path,
+      //   size: file.size,
+      //   mimetype: file.mimetype,
+      //   // Add other relevant file metadata
+      // })),
+      timestamp: admin.firestore.FieldValue.serverTimestamp(), // Add a timestamp
+      // Add other relevant data you want to store
+    };
+
+    // Store data in Firestore
+    await db.collection("upload").add(uploadData); // Use await here
+
     res.status(200).json({
-      message: "Files uploaded successfully",
-      files: req.files,
+      message: "Lead ID stored successfully",
       leadId: leadId,
     });
   } catch (error) {
-    console.error("Error handling file upload:", error);
+    console.error("Error storing lead ID:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
