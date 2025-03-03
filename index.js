@@ -5,20 +5,20 @@ const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+
 const app = express();
 
+// Middleware
 app.use(express.json());
-
-// CORS configuration
 app.use(cors({
   origin: [
     'https://localhost:3003',
     'https://react-project-theta-sandy-50.vercel.app',
-    'https://cool-concha-77afd3.netlify.app' // Add this
+    'https://cool-concha-77afd3.netlify.app'
   ],
 }));
 
-// Endpoint to get Salesforce access token
+// Salesforce Authentication Endpoint
 app.post("/auth/salesforce", async (req, res) => {
   try {
     const params = new URLSearchParams({
@@ -36,12 +36,12 @@ app.post("/auth/salesforce", async (req, res) => {
     console.log("Salesforce Access Token:", response.data.access_token);
     res.json(response.data);
   } catch (error) {
-    console.error("Error getting Salesforce access token:", error.response.data);
-    res.status(400).json({ error: error.response.data });
+    console.error("Error getting Salesforce access token:", error.response?.data || error.message);
+    res.status(400).json({ error: error.response?.data || error.message });
   }
 });
 
-// Multer setup for file uploads
+// Multer Setup for File Uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     if (!fs.existsSync("uploads")) {
@@ -56,7 +56,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// Route to handle file uploads
+// File Upload Endpoint
 app.post("/api/upload", upload.any(), (req, res) => {
   try {
     console.log("Files uploaded:", req.files);
@@ -73,7 +73,11 @@ app.post("/api/upload", upload.any(), (req, res) => {
   }
 });
 
-// Start the server
-app.listen(5000, () => {
-  console.log("🚀 Backend running on https://react-project-theta-sandy-50.vercel.app");
+// Start the Server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`🚀 Backend running on port ${PORT}`);
 });
+
+// Export the app for Vercel
+module.exports = app;
