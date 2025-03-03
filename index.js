@@ -41,27 +41,36 @@ app.post("/auth/salesforce", async (req, res) => {
   }
 });
 
-// Multer Setup for File Uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
+    // Create the 'uploads' directory if it doesn't exist
     if (!fs.existsSync("uploads")) {
       fs.mkdirSync("uploads");
     }
-    cb(null, "uploads/");
+    cb(null, "uploads/"); // Save files in the 'uploads' directory
   },
   filename: function (req, file, cb) {
+    // Append a timestamp to the filename to make it unique
     cb(null, Date.now() + path.extname(file.originalname));
   },
 });
 
 const upload = multer({ storage: storage });
 
-// File Upload Endpoint
+// Middleware to parse JSON and URL-encoded bodies
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Route to handle file uploads
 app.post("/api/upload", upload.any(), (req, res) => {
   try {
     console.log("Files uploaded:", req.files);
+
+    // Extract leadId from the request body
     const leadId = req.body.leadId;
     console.log("Lead ID:", leadId);
+
+    // Respond with success message, uploaded file details, and leadId
     res.status(200).json({
       message: "Files uploaded successfully",
       files: req.files,
@@ -71,6 +80,12 @@ app.post("/api/upload", upload.any(), (req, res) => {
     console.error("Error handling file upload:", error);
     res.status(500).json({ error: "Internal server error" });
   }
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error("Error:", err);
+  res.status(500).json({ error: "Something went wrong!" });
 });
 
 // Start the Server
