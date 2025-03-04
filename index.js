@@ -51,29 +51,28 @@ try {
 
   app.post("/api/upload", async (req, res) => {
     try {
-      const leadId = req.body.lead_id;
-      console.log("Lead ID:", leadId);
+        const leadId = req.body.lead_id; // Access leadId from req.body
 
-      if (!leadId) {
-        return res.status(400).json({ error: "Lead ID is required" });
-      }
+        if (!leadId) {
+            return res.status(400).json({ error: "Lead ID is required" });
+        }
 
-      const uploadData = {
-        leadId: leadId,
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      };
+        const uploadData = {
+            leadId: leadId,
+            timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        };
 
-      await db.collection("upload").add(uploadData);
+        await db.collection("upload").add(uploadData); // Add to the "upload" collection directly
 
-      res.status(200).json({
-        message: "Lead ID stored successfully",
-        leadId: leadId,
-      });
+        res.status(200).json({
+            message: "Lead ID stored successfully",
+            leadId: leadId,
+        });
     } catch (error) {
-      console.error("Error storing lead ID:", error);
-      res.status(500).json({ error: "Internal server error" });
+        console.error("Error storing lead ID:", error);
+        res.status(500).json({ error: "Internal server error" });
     }
-  });
+});
 
   app.use((err, req, res, next) => {
     console.error("Error:", err);
